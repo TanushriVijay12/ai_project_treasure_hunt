@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+.venv/
+env/
+ENV/
+Pipfile.lock
+
+# PyInstaller
+*.spec
+dist/
+build/
+
+# Logs
+*.log
+log.txt
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Test & debug
+*.bak
+*.swp
+
+# Python egg info
+*.egg-info/
+.eggs/
+
+# Cache
+.cache/
