@@ -46,3 +46,14 @@ class GridWorld:
         x, y = pos
         adj = [(x+1,y), (x-1,y), (x,y+1), (x,y-1)]
         return [(a,b) for a,b in adj if 0 <= a < self.size and 0 <= b < self.size]
+
+    def move_agent_to(self, pos):
+        self.agent_pos = pos
+        self.revealed.add(pos)
+        self.revealed.update(self.get_adjacent(pos))
+        self.visited.add(pos)
+
+        if pos in self.traps:
+            self.status = "lost"
+        elif pos == self.treasure:
+            self.status = "won"
