@@ -101,12 +101,18 @@ def main():
 
                 elif event.key == pygame.K_t:
                     reveal_all = not reveal_all
+                    print(f"[DEBUG] reveal_all is now {reveal_all}")
 
                 elif world.status in ["won", "lost"] and event.key == pygame.K_r:
                     if world.status == "won":
                         grid_size += 1
                     world = GridWorld(grid_size)
                     agent = Agent(grid_size)
+                    # Restore perception and knowledge
+                    world.revealed.add(agent.pos)
+                    world.revealed.update(world.get_adjacent(agent.pos))
+                    initial_percepts = world.get_adjacent(agent.pos)
+                    agent.update_knowledge(initial_percepts, world)
 
         clock.tick(10)
 
