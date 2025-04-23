@@ -1,3 +1,4 @@
+# treasure_hunt_ai/main.py
 import pygame
 from game import GridWorld
 from agent import Agent
@@ -28,6 +29,14 @@ def draw_grid(world, agent):
     agent_rect = pygame.Rect(ax*TILE_SIZE, ay*TILE_SIZE, TILE_SIZE, TILE_SIZE)
     pygame.draw.rect(screen, COLORS['agent'], agent_rect)
 
+def draw_status(world):
+    if world.status == "won":
+        text = font.render("🎉 You won! Press R to retry with larger grid.", True, (255, 255, 255))
+        screen.blit(text, (20, 10))
+    elif world.status == "lost":
+        text = font.render("💀 You lost! Press R to retry.", True, (255, 255, 255))
+        screen.blit(text, (20, 10))
+
 def main():
     clock = pygame.time.Clock()
     grid_size = 5
@@ -38,34 +47,36 @@ def main():
     while running:
         screen.fill((0,0,0))
         draw_grid(world, agent)
+        draw_status(world)
         pygame.display.flip()
-
-        pygame.time.wait(200)
-
-        if world.status == "running":
-            percepts = world.get_adjacent(agent.pos)
-            agent.update_knowledge(percepts, world)
-            move = agent.choose_move()
-            if move:
-                agent.move(move)
-                world.move_agent_to(agent.pos)
-
-        elif world.status == "won":
-            pygame.display.set_caption("🎉 You found the treasure! Increasing grid size...")
-            pygame.time.wait(1500)
-            grid_size += 1
-            world = GridWorld(grid_size)
-            agent = Agent(grid_size)
-
-        elif world.status == "lost":
-            pygame.display.set_caption("💀 You hit a trap! Restarting...")
-            pygame.time.wait(1500)
-            world = GridWorld(grid_size)
-            agent = Agent(grid_size)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
+            if event.type == pygame.KEYDOWN:
+                if world.status == "running":
+                    dx, dy = 0, 0
+                    if event.key == pygame.K_UP: dy = -1
+                    elif event.key == pygame.K_DOWN: dy = 1
+                    elif event.key == pygame.K_LEFT: dx = -1
+                    elif event.key == pygame.K_RIGHT: dx = 1
+
+                    target = (agent.pos[0] + dx, agent.pos[1] + dy)
+                    path = agent.plan_path(target)
+                    if path and len(path) > 1:
+                        agent.move(path[1])
+                        world.move_agent_to(agent.pos)
+                        percepts = world.get_adjacent(agent.pos)
+                        agent.update_knowledge(percepts, world)
+                    else:
+                        print(f"Blocked move: {target} not in safe")
+
+                elif world.status in ["won", "lost"] and event.key == pygame.K_r:
+                    if world.status == "won":
+                        grid_size += 1
+                    world = GridWorld(grid_size)
+                    agent = Agent(grid_size)
 
         clock.tick(10)
 

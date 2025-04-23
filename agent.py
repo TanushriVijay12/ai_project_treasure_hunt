@@ -11,6 +11,15 @@ class Agent:
         self.frontier = set()
         self.unsafe = set()
 
+        # Add initial adjacent cells to frontier and safe for testing
+        x, y = self.pos
+        for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < grid_size and 0 <= ny < grid_size:
+                self.frontier.add((nx, ny))
+                self.safe.add((nx, ny))
+
+
     def update_knowledge(self, percepts, world):
         self.visited.add(self.pos)
         self.safe.add(self.pos)
@@ -44,3 +53,11 @@ class Agent:
 
     def move(self, new_pos):
         self.pos = new_pos
+
+    def plan_path(self, target):
+        if target not in self.safe:
+            print(f"Blocked move: {target} not in safe")
+            return None
+        path = a_star(self.pos, target, self.grid_size, self.safe)
+        print(f"Path to {target}: {path}")
+        return path
