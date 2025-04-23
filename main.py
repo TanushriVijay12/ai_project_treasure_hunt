@@ -2,18 +2,20 @@
 import pygame
 from game import GridWorld
 from agent import Agent
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, TILE_SIZE
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, TILE_SIZE, STATUS_PANEL_WIDTH
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Treasure Hunt in Foggy Grid")
 font = pygame.font.SysFont(None, 36)
 
-def draw_grid(world, agent):
+open("log.txt", "w").close()  # clear log at start
+
+def draw_grid(world, agent, reveal_all):
     for x in range(world.size):
         for y in range(world.size):
             rect = pygame.Rect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
-            if (x, y) in world.revealed:
+            if reveal_all or (x, y) in world.revealed:
                 pygame.draw.rect(screen, COLORS['safe'], rect)
                 if (x, y) == world.treasure:
                     pygame.draw.circle(screen, COLORS['treasure'], rect.center, TILE_SIZE//4)
@@ -29,25 +31,48 @@ def draw_grid(world, agent):
     agent_rect = pygame.Rect(ax*TILE_SIZE, ay*TILE_SIZE, TILE_SIZE, TILE_SIZE)
     pygame.draw.rect(screen, COLORS['agent'], agent_rect)
 
-def draw_status(world):
+def draw_status(world, agent, grid_size):
+    status_x = grid_size * TILE_SIZE + 20  # right panel start
+
+    info = f"Grid: {grid_size}x{grid_size}"
+    moves = f"Moves: {len(agent.visited)}"
+    info_text = font.render(info, True, COLORS['text'])
+    moves_text = font.render(moves, True, COLORS['text'])
+    screen.blit(info_text, (status_x, 40))
+    screen.blit(moves_text, (status_x, 80))
+
     if world.status == "won":
-        text = font.render("🎉 You won! Press R to retry with larger grid.", True, (255, 255, 255))
-        screen.blit(text, (20, 10))
+        win_text = font.render("You won!", True, COLORS['win'])
+        prompt = font.render("Press R to retry", True, COLORS['text'])
+        screen.blit(win_text, (status_x, 120))
+        screen.blit(prompt, (status_x, 160))
     elif world.status == "lost":
-        text = font.render("💀 You lost! Press R to retry.", True, (255, 255, 255))
-        screen.blit(text, (20, 10))
+        lose_text = font.render("You lost!", True, COLORS['lose'])
+        prompt = font.render("Press R to retry", True, COLORS['text'])
+        screen.blit(lose_text, (status_x, 120))
+        screen.blit(prompt, (status_x, 160))
 
 def main():
     clock = pygame.time.Clock()
     grid_size = 5
     world = GridWorld(grid_size)
     agent = Agent(grid_size)
+    # Reveal starting cell and adjacent cells
+    world.revealed.add(agent.pos)
+    world.revealed.update(world.get_adjacent(agent.pos))
+    # Provide initial percepts
+    initial_percepts = world.get_adjacent(agent.pos)
+    agent.update_knowledge(initial_percepts, world)
+
+    reveal_all = False
 
     running = True
     while running:
-        screen.fill((0,0,0))
-        draw_grid(world, agent)
-        draw_status(world)
+        screen.fill((0, 0, 0))  # full window clear
+        pygame.draw.rect(screen, COLORS['panel_bg'], (grid_size * TILE_SIZE, 0, STATUS_PANEL_WIDTH, SCREEN_HEIGHT))
+
+        draw_grid(world, agent, reveal_all)
+        draw_status(world, agent, grid_size)
         pygame.display.flip()
 
         for event in pygame.event.get():
@@ -69,8 +94,13 @@ def main():
                         world.move_agent_to(agent.pos)
                         percepts = world.get_adjacent(agent.pos)
                         agent.update_knowledge(percepts, world)
+                        with open("log.txt", "a") as f:
+                            f.write(f"Moved to {agent.pos}\n")
                     else:
                         print(f"Blocked move: {target} not in safe")
+
+                elif event.key == pygame.K_t:
+                    reveal_all = not reveal_all
 
                 elif world.status in ["won", "lost"] and event.key == pygame.K_r:
                     if world.status == "won":
