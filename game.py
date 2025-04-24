@@ -16,17 +16,19 @@ class GridWorld:
 
     def generate_traps(self, count=3):
         traps = set()
+        safe_zone = self.get_safe_start_zone()
         while len(traps) < count:
             x, y = random.randint(0, self.size-1), random.randint(0, self.size-1)
-            if (x, y) != (0, 0):
+            if (x, y) not in safe_zone:
                 traps.add((x, y))
         return traps
 
     def generate_pits(self, count=2):
         pits = set()
+        safe_zone = self.get_safe_start_zone()
         while len(pits) < count:
             x, y = random.randint(0, self.size-1), random.randint(0, self.size-1)
-            if (x, y) != (0, 0) and (x, y) not in self.traps:
+            if (x, y) not in safe_zone and (x, y) not in self.traps:
                 pits.add((x, y))
         return pits
 
@@ -56,6 +58,11 @@ class GridWorld:
         x, y = pos
         adj = [(x+1,y), (x-1,y), (x,y+1), (x,y-1)]
         return [(a,b) for a,b in adj if 0 <= a < self.size and 0 <= b < self.size]
+
+    def get_safe_start_zone(self):
+        x, y = 0, 0
+        adj = self.get_adjacent((x, y))
+        return set(adj + [(x, y)])
 
     def move_agent_to(self, pos):
         self.agent_pos = pos
