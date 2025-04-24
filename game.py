@@ -9,8 +9,10 @@ class GridWorld:
         self.visited = set()
         self.revealed = set()
         self.traps = self.generate_traps()
+        self.pits = self.generate_pits()
         self.treasure = self.generate_treasure()
         self.status = "running"
+        
 
     def generate_traps(self, count=3):
         traps = set()
@@ -20,10 +22,18 @@ class GridWorld:
                 traps.add((x, y))
         return traps
 
+    def generate_pits(self, count=2):
+        pits = set()
+        while len(pits) < count:
+            x, y = random.randint(0, self.size-1), random.randint(0, self.size-1)
+            if (x, y) != (0, 0) and (x, y) not in self.traps:
+                pits.add((x, y))
+        return pits
+
     def generate_treasure(self):
         while True:
             x, y = random.randint(0, self.size-1), random.randint(0, self.size-1)
-            if (x, y) != (0, 0) and (x, y) not in self.traps:
+            if (x, y) != (0, 0) and (x, y) not in self.traps and (x, y) not in self.pits:
                 return (x, y)
 
     def move_agent(self, dx, dy):
@@ -52,8 +62,11 @@ class GridWorld:
         self.revealed.add(pos)
         self.revealed.update(self.get_adjacent(pos))
         self.visited.add(pos)
+        print(f"[DEBUG] Stepped on: {pos}")
+        print(f"[DEBUG] Trap: {pos in self.traps}, Pit: {pos in self.pits}, Treasure: {pos == self.treasure}")
 
-        if pos in self.traps:
-            self.status = "lost"
-        elif pos == self.treasure:
+        if pos == self.treasure:
             self.status = "won"
+        elif pos in self.traps or pos in self.pits:
+            self.status = "lost"
+
