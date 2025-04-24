@@ -1,12 +1,18 @@
-TILE_SIZE = 80
-GRID_SIZE = 5
 WINDOW_PADDING = 50
-
-# Add a sidebar of 300px for status/info panel
+GRID_SIZE = 5
 STATUS_PANEL_WIDTH = 300
+MAX_WINDOW_HEIGHT = 800
+MAX_WINDOW_WIDTH = 1000
 
-SCREEN_WIDTH = GRID_SIZE * TILE_SIZE + STATUS_PANEL_WIDTH
-SCREEN_HEIGHT = GRID_SIZE * TILE_SIZE
+def get_tile_size(grid_size):
+    return min((MAX_WINDOW_HEIGHT // grid_size), 60)  # upper limit to prevent overly large tiles
+
+def get_screen_dimensions(grid_size):
+    tile_size = get_tile_size(grid_size)
+    width = grid_size * tile_size + STATUS_PANEL_WIDTH
+    height = grid_size * tile_size
+    return width, height, tile_size
+
 
 COLORS = {
     'fog': (30, 30, 30),

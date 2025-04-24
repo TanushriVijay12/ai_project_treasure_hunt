@@ -2,16 +2,18 @@
 import pygame
 from game import GridWorld
 from agent import Agent
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, COLORS, TILE_SIZE, STATUS_PANEL_WIDTH
+from config import get_screen_dimensions, COLORS, STATUS_PANEL_WIDTH
 
 pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+grid_size = 5
+SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE = get_screen_dimensions(grid_size)
+#=screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Treasure Hunt in Foggy Grid")
 font = pygame.font.SysFont(None, 36)
 
 open("log.txt", "w").close()  # clear log at start
 
-def draw_grid(world, agent, reveal_all):
+def draw_grid(screen, world, agent, reveal_all):
     for x in range(world.size):
         for y in range(world.size):
             rect = pygame.Rect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
@@ -31,7 +33,7 @@ def draw_grid(world, agent, reveal_all):
     agent_rect = pygame.Rect(ax*TILE_SIZE, ay*TILE_SIZE, TILE_SIZE, TILE_SIZE)
     pygame.draw.rect(screen, COLORS['agent'], agent_rect)
 
-def draw_status(world, agent, grid_size):
+def draw_status(screen, world, agent, grid_size):
     status_x = grid_size * TILE_SIZE + 20  # right panel start
 
     info = f"Grid: {grid_size}x{grid_size}"
@@ -55,8 +57,13 @@ def draw_status(world, agent, grid_size):
 def main():
     clock = pygame.time.Clock()
     grid_size = 5
+    SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE = get_screen_dimensions(grid_size)
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
     world = GridWorld(grid_size)
     agent = Agent(grid_size)
+
+
     # Reveal starting cell and adjacent cells
     world.revealed.add(agent.pos)
     world.revealed.update(world.get_adjacent(agent.pos))
@@ -71,8 +78,8 @@ def main():
         screen.fill((0, 0, 0))  # full window clear
         pygame.draw.rect(screen, COLORS['panel_bg'], (grid_size * TILE_SIZE, 0, STATUS_PANEL_WIDTH, SCREEN_HEIGHT))
 
-        draw_grid(world, agent, reveal_all)
-        draw_status(world, agent, grid_size)
+        draw_grid(screen, world, agent, reveal_all)
+        draw_status(screen, world, agent, grid_size)
         pygame.display.flip()
 
         for event in pygame.event.get():
@@ -106,6 +113,8 @@ def main():
                 elif world.status in ["won", "lost"] and event.key == pygame.K_r:
                     if world.status == "won":
                         grid_size += 1
+                    SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE = get_screen_dimensions(grid_size)
+                    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
                     world = GridWorld(grid_size)
                     agent = Agent(grid_size)
                     # Restore perception and knowledge
