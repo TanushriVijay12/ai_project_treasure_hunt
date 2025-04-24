@@ -13,20 +13,34 @@ font = pygame.font.SysFont(None, 36)
 
 open("log.txt", "w").close()  # clear log at start
 
-def draw_grid(screen, world, agent, reveal_all):
+def draw_grid(screen, world, agent, reveal_all, visualize_a_star):
     for x in range(world.size):
         for y in range(world.size):
             rect = pygame.Rect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
-            if reveal_all or (x, y) in world.revealed:
+            tile = (x, y)
+
+            # Base tile coloring with A* overlays
+            if visualize_a_star and tile in agent.last_path:
+                pygame.draw.rect(screen, COLORS['path'], rect)
+            elif visualize_a_star and tile in agent.last_open_set:
+                pygame.draw.rect(screen, COLORS['open'], rect)
+            elif visualize_a_star and tile in agent.last_closed_set:
+                pygame.draw.rect(screen, COLORS['closed'], rect)
+            elif reveal_all or tile in world.revealed:
                 pygame.draw.rect(screen, COLORS['safe'], rect)
-                if (x, y) == world.treasure:
-                    pygame.draw.circle(screen, COLORS['treasure'], rect.center, TILE_SIZE//4)
-                elif (x, y) in world.traps:
-                    pygame.draw.circle(screen, COLORS['trap'], rect.center, TILE_SIZE//4)
             else:
                 pygame.draw.rect(screen, COLORS['fog'], rect)
 
+
+            # Grid lines
             pygame.draw.rect(screen, COLORS['grid'], rect, 1)
+
+            # Draw trap/treasure only if visible
+            if reveal_all or tile in world.revealed:
+                if tile == world.treasure:
+                    pygame.draw.circle(screen, COLORS['treasure'], rect.center, TILE_SIZE // 4)
+                elif tile in world.traps:
+                    pygame.draw.circle(screen, COLORS['trap'], rect.center, TILE_SIZE // 4)
 
     # draw agent
     ax, ay = agent.pos
@@ -72,13 +86,14 @@ def main():
     agent.update_knowledge(initial_percepts, world)
 
     reveal_all = False
+    visualize_a_star = True  # NEW TOGGLE FOR VISUALIZATION
 
     running = True
     while running:
         screen.fill((0, 0, 0))  # full window clear
         pygame.draw.rect(screen, COLORS['panel_bg'], (grid_size * TILE_SIZE, 0, STATUS_PANEL_WIDTH, SCREEN_HEIGHT))
 
-        draw_grid(screen, world, agent, reveal_all)
+        draw_grid(screen, world, agent, reveal_all, visualize_a_star)
         draw_status(screen, world, agent, grid_size)
         pygame.display.flip()
 

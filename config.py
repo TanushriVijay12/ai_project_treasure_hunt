@@ -25,4 +25,8 @@ COLORS = {
     'text': (255, 255, 255),        # white text
     'win': (0, 255, 0),
     'lose': (255, 0, 0),
+     # A* Visualization colors
+    'path': (0, 255, 0),        # bright green
+    'open': (173, 216, 230),    # light cyan
+    'closed': (255, 200, 130),  # light orange
 }
