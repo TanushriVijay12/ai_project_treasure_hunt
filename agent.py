@@ -53,6 +53,8 @@ class Agent:
             for nx, ny in world.get_adjacent(self.pos):
                 if (nx, ny) not in self.safe:
                     self.risk_map[(nx, ny)] = max(0.0, self.risk_map[(nx, ny)] - 0.1)
+        self.infer_knowledge(world)
+
 
     def choose_move(self):
         unexplored = self.frontier - self.visited
@@ -101,3 +103,25 @@ class Agent:
         self.last_closed_set = closed_set
         self.last_path = path
         return path
+    
+    def infer_knowledge(self, world):
+        """
+        Use rule-based inference to deduce safe and unsafe (trap) tiles based on visited knowledge.
+         """
+        for cell in self.visited:
+            if cell in world.traps:
+                # If it's a trap, look at its unrevealed neighbors
+                neighbors = world.get_adjacent(cell)
+                unknowns = [n for n in neighbors if n not in self.safe and n not in self.unsafe]
+                if len(unknowns) == 1:
+                    self.unsafe.add(unknowns[0])
+                    print(f"[INFER] Marking {unknowns[0]} as TRAP based on single unknown near trap {cell}")
+            else:
+                # If it's safe, mark unrevealed neighbors as likely safe
+                neighbors = world.get_adjacent(cell)
+                for n in neighbors:
+                    if n not in self.unsafe and n not in self.safe:
+                        self.safe.add(n)
+                        print(f"[INFER] Marking {n} as SAFE based on safe cell {cell}")
+
+    
