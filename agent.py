@@ -10,6 +10,10 @@ class Agent:
         self.safe = {(0, 0)}
         self.frontier = set()
         self.unsafe = set()
+        self.last_open_set = set()
+        self.last_closed_set = set()
+        self.last_path = []
+
 
         self.risk_map = defaultdict(lambda: 0.5)  # default risk 50% on unknowns
 
@@ -21,7 +25,10 @@ class Agent:
                 self.frontier.add((nx, ny))
                 self.safe.add((nx, ny))
 
-
+        self.last_open_set = set()
+        self.last_closed_set = set()
+        self.last_path = []
+        
     def update_knowledge(self, percepts, world):
         self.visited.add(self.pos)
         self.safe.add(self.pos)
@@ -56,7 +63,11 @@ class Agent:
         path, target = None, None
         for cell in unexplored:
             if cell in self.safe:
-                result = a_star(self.pos, cell, self.grid_size, self.safe)
+                result, open_set, closed_set = a_star(self.pos, cell, self.grid_size, self.safe)
+                self.last_open_set = open_set
+                self.last_closed_set = closed_set
+                self.last_path = result
+
                 if result and (path is None or len(result) < len(path)):
                     path = result
                     target = cell
@@ -65,7 +76,11 @@ class Agent:
         if not path:
             lowest_risk = min(unexplored, key=lambda c: self.risk_map[c])
             print(f"[DEBUG] No safe path found. Picking lowest risk tile: {lowest_risk} with risk={self.risk_map[lowest_risk]:.2f}")
-            result = a_star(self.pos, lowest_risk, self.grid_size, self.safe | {lowest_risk})
+            result, open_set, closed_set = a_star(self.pos, lowest_risk, self.grid_size, self.safe | {lowest_risk})
+            self.last_open_set = open_set
+            self.last_closed_set = closed_set
+            self.last_path = result
+
             if result and len(result) > 1:
                 return result[1]
 
@@ -80,6 +95,9 @@ class Agent:
         if target not in self.safe:
             print(f"Blocked move: {target} not in safe")
             return None
-        path = a_star(self.pos, target, self.grid_size, self.safe)
+        path, open_set, closed_set = a_star(self.pos, target, self.grid_size, self.safe)
         print(f"Path to {target}: {path}")
+        self.last_open_set = open_set
+        self.last_closed_set = closed_set
+        self.last_path = path
         return path
