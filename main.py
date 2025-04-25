@@ -13,6 +13,15 @@ font = pygame.font.SysFont(None, 36)
 
 open("log.txt", "w").close()  # clear log at start
 
+def risk_to_color(risk):
+    # Clamp between 0 and 1
+    risk = max(0.0, min(1.0, risk))
+    r = int(255 * risk)
+    g = int(255 * (1 - risk))
+    b = 0
+    return (r, g, b)
+
+
 def draw_grid(screen, world, agent, reveal_all, visualize_a_star):
     for x in range(world.size):
         for y in range(world.size):
@@ -29,7 +38,13 @@ def draw_grid(screen, world, agent, reveal_all, visualize_a_star):
             elif reveal_all or tile in world.revealed:
                 pygame.draw.rect(screen, COLORS['safe'], rect)
             else:
-                pygame.draw.rect(screen, COLORS['fog'], rect)
+                # Fog with risk coloring
+                if tile in agent.risk_map:
+                    risk_color = risk_to_color(agent.risk_map[tile])
+                    pygame.draw.rect(screen, risk_color, rect)
+                else:
+                    pygame.draw.rect(screen, COLORS['fog'], rect)
+
 
 
             # Grid lines
