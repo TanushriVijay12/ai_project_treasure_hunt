@@ -10,9 +10,10 @@ class GridWorld:
         self.revealed = set()
         self.traps = self.generate_traps()
         self.pits = self.generate_pits()
+        self.percepts = self.generate_percepts()
         self.treasure = self.generate_treasure()
         self.status = "running"
-        
+       
 
     def generate_traps(self, count=3):
         traps = set()
@@ -32,6 +33,23 @@ class GridWorld:
             if (x, y) not in safe_zone and (x, y) not in self.traps:
                 pits.add((x, y))
         return pits
+
+    def generate_percepts(self):
+        percepts = {}
+        for pit in self.pits:
+            for adj in self.get_adjacent(pit):
+                if adj not in percepts:
+                    percepts[adj] = set()
+                percepts[adj].add("breeze")
+        for trap in self.traps:
+            for adj in self.get_adjacent(trap):
+                if adj not in percepts:
+                    percepts[adj] = set()
+                percepts[adj].add("stench")
+        return percepts
+
+    def get_percepts_at(self, pos):
+        return self.percepts.get(pos, set())
 
     def generate_treasure(self):
         while True:

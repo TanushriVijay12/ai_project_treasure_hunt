@@ -129,8 +129,9 @@ def main():
                     if path and len(path) > 1:
                         agent.move(path[1])
                         world.move_agent_to(agent.pos)
-                        percepts = world.get_adjacent(agent.pos)
+                        percepts = world.get_percepts_at(agent.pos)
                         agent.update_knowledge(percepts, world)
+
                         with open("log.txt", "a") as f:
                             f.write(f"Moved to {agent.pos}\n")
                     else:
