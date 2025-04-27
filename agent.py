@@ -9,6 +9,8 @@ class Agent:
         self.visited = set()
         self.safe = {(0, 0)}
         self.frontier = set()
+        self.suspected_pits = set()
+        self.suspected_traps = set()
         self.unsafe = set()
         self.last_open_set = set()
         self.last_closed_set = set()
@@ -33,31 +35,39 @@ class Agent:
         self.visited.add(self.pos)
         self.safe.add(self.pos)
 
-        # Mark adjacent cells safe if no trap nearby
-        for cell in percepts:
-            if cell not in self.visited and cell not in self.unsafe:
+        if "breeze" in percepts:
+            for cell in world.get_adjacent(self.pos):
+                if cell not in self.safe and cell not in self.visited:
+                    self.suspected_pits.add(cell)
+
+        if "stench" in percepts:
+            for cell in world.get_adjacent(self.pos):
+                if cell not in self.safe and cell not in self.visited:
+                    self.suspected_traps.add(cell)
+
+        if not percepts:
+            # No danger nearby → mark adjacent cells as safe!
+            for cell in world.get_adjacent(self.pos):
+                if cell not in self.visited:
+                    self.safe.add(cell)
+                    if cell in self.suspected_pits:
+                        self.suspected_pits.discard(cell)
+                    if cell in self.suspected_traps:
+                        self.suspected_traps.discard(cell)
+
+        # Update frontier as usual
+        for cell in world.get_adjacent(self.pos):
+            if cell not in self.visited and cell not in self.safe and cell not in self.unsafe:
                 self.frontier.add(cell)
-                self.safe.add(cell)
 
-        if self.pos in world.traps:
+        # Check if we stepped into real danger
+        if self.pos in world.traps or self.pos in world.pits:
             self.unsafe.add(self.pos)
-
-        # Update risk map based on trap perception
-        if self.pos in world.traps:
-            # Increase risk around trap
-            for nx, ny in world.get_adjacent(self.pos):
-                if (nx, ny) not in self.safe:
-                    self.risk_map[(nx, ny)] += 0.25
-        else:
-            # Decrease risk if no trap seen
-            for nx, ny in world.get_adjacent(self.pos):
-                if (nx, ny) not in self.safe:
-                    self.risk_map[(nx, ny)] = max(0.0, self.risk_map[(nx, ny)] - 0.1)
-        self.infer_knowledge(world)
 
 
     def choose_move(self):
-        unexplored = self.frontier - self.visited
+        # Avoid suspected danger tiles
+        unexplored = unexplored - self.suspected_pits - self.suspected_traps
         if not unexplored:
             return None
 
