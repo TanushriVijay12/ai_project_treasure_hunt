@@ -23,6 +23,7 @@ class GridWorld:
                 traps.add((x, y))
         return traps
 
+
     def generate_pits(self, count=2):
         pits = set()
         safe_zone = self.get_safe_start_zone()
