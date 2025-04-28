@@ -35,34 +35,41 @@ class Agent:
         self.visited.add(self.pos)
         self.safe.add(self.pos)
 
-        if "breeze" in percepts:
-            for cell in world.get_adjacent(self.pos):
-                if cell not in self.safe and cell not in self.visited:
-                    self.suspected_pits.add(cell)
-
-        if "stench" in percepts:
-            for cell in world.get_adjacent(self.pos):
-                if cell not in self.safe and cell not in self.visited:
-                    self.suspected_traps.add(cell)
+        adjacent = world.get_adjacent(self.pos)
 
         if not percepts:
-            # No danger nearby → mark adjacent cells as safe!
-            for cell in world.get_adjacent(self.pos):
+            # No breeze, no stench ➔ All neighbors are safe
+            for cell in adjacent:
                 if cell not in self.visited:
                     self.safe.add(cell)
-                    if cell in self.suspected_pits:
-                        self.suspected_pits.discard(cell)
-                    if cell in self.suspected_traps:
-                        self.suspected_traps.discard(cell)
+                    self.suspected_pits.discard(cell)
+                    self.suspected_traps.discard(cell)
 
-        # Update frontier as usual
-        for cell in world.get_adjacent(self.pos):
+        else:
+            # Stronger reasoning:
+            if "breeze" in percepts:
+                unknown_neighbors = [c for c in adjacent if c not in self.safe and c not in self.visited]
+                if len(unknown_neighbors) == 1:
+                    pit_cell = unknown_neighbors[0]
+                    self.suspected_pits.add(pit_cell)
+                    print(f"[INFER] Definitely a PIT at {pit_cell} based on breeze!")
+            
+            if "stench" in percepts:
+                unknown_neighbors = [c for c in adjacent if c not in self.safe and c not in self.visited]
+                if len(unknown_neighbors) == 1:
+                    trap_cell = unknown_neighbors[0]
+                    self.suspected_traps.add(trap_cell)
+                    print(f"[INFER] Definitely a TRAP at {trap_cell} based on stench!")
+
+        # Update frontier
+        for cell in adjacent:
             if cell not in self.visited and cell not in self.safe and cell not in self.unsafe:
                 self.frontier.add(cell)
 
-        # Check if we stepped into real danger
+        # Mark unsafe if actually stepped into trap or pit
         if self.pos in world.traps or self.pos in world.pits:
             self.unsafe.add(self.pos)
+
 
 
     def choose_move(self):
