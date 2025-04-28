@@ -71,41 +71,41 @@ class Agent:
             self.unsafe.add(self.pos)
 
 
-
     def choose_move(self):
-        # Avoid suspected danger tiles
+        unexplored = self.frontier - self.visited
         unexplored = unexplored - self.suspected_pits - self.suspected_traps
         if not unexplored:
-            return None
+            return None  # No unexplored safe frontier
 
-        # Choose closest safe unexplored tile
         path, target = None, None
         for cell in unexplored:
             if cell in self.safe:
                 result, open_set, closed_set = a_star(self.pos, cell, self.grid_size, self.safe)
+                if result and (path is None or len(result) < len(path)):
+                    path = result
+                    target = cell
                 self.last_open_set = open_set
                 self.last_closed_set = closed_set
                 self.last_path = result
 
-                if result and (path is None or len(result) < len(path)):
-                    path = result
-                    target = cell
-
-         # Try safe known tile first
         if not path:
+            # Try risky moves
             lowest_risk = min(unexplored, key=lambda c: self.risk_map[c])
-            print(f"[DEBUG] No safe path found. Picking lowest risk tile: {lowest_risk} with risk={self.risk_map[lowest_risk]:.2f}")
+            print(f"[DEBUG] No safe path, picking lowest risk {lowest_risk}")
             result, open_set, closed_set = a_star(self.pos, lowest_risk, self.grid_size, self.safe | {lowest_risk})
+            if result:
+                path = result
+                target = lowest_risk
             self.last_open_set = open_set
             self.last_closed_set = closed_set
             self.last_path = result
 
-            if result and len(result) > 1:
-                return result[1]
-
         if path and len(path) > 1:
             return path[1]  # next move
-        return None
+        else:
+            return None  # No move possible
+
+
 
     def move(self, new_pos):
         self.pos = new_pos

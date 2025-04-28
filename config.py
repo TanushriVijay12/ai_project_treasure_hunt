@@ -29,4 +29,8 @@ COLORS = {
     'path': (0, 255, 0),        # bright green
     'open': (173, 216, 230),    # light cyan
     'closed': (255, 200, 130),  # light orange
+    # Logical Inference
+    'suspected_trap': (255, 165, 0),      # Orange
+    'suspected_pit': (128, 0, 128),        # Purple
+    'safe_inferred': (220, 220, 220)       # Light gray (optional)
 }

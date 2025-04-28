@@ -28,39 +28,46 @@ def draw_grid(screen, world, agent, reveal_all, visualize_a_star):
             rect = pygame.Rect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
             tile = (x, y)
 
-            # Base tile coloring with A* overlays
-            if visualize_a_star and tile in agent.last_path:
-                pygame.draw.rect(screen, COLORS['path'], rect)
+            # Decide color priority
+            color = COLORS['fog']  # Default
+
+            if tile == agent.pos:
+                color = COLORS['agent']
+            elif visualize_a_star and tile in agent.last_path:
+                color = COLORS['path']
             elif visualize_a_star and tile in agent.last_open_set:
-                pygame.draw.rect(screen, COLORS['open'], rect)
+                color = COLORS['open']
             elif visualize_a_star and tile in agent.last_closed_set:
-                pygame.draw.rect(screen, COLORS['closed'], rect)
+                color = COLORS['closed']
             elif reveal_all or tile in world.revealed:
-                pygame.draw.rect(screen, COLORS['safe'], rect)
-            else:
-                # Fog with risk coloring
-                if tile in agent.risk_map:
-                    risk_color = risk_to_color(agent.risk_map[tile])
-                    pygame.draw.rect(screen, risk_color, rect)
+                if tile in agent.suspected_traps:
+                    color = COLORS['suspected_trap']
+                elif tile in agent.suspected_pits:
+                    color = COLORS['suspected_pit']
+                elif tile in agent.safe:
+                    color = COLORS['safe']
                 else:
-                    pygame.draw.rect(screen, COLORS['fog'], rect)
+                    color = COLORS['safe_inferred']
+            else:
+                # Unrevealed: apply risk heatmap
+                if tile in agent.risk_map:
+                    color = risk_to_color(agent.risk_map[tile])
+                else:
+                    color = COLORS['fog']
 
+            # Draw the cell
+            pygame.draw.rect(screen, color, rect)
 
-
-            # Grid lines
+            # Draw grid border
             pygame.draw.rect(screen, COLORS['grid'], rect, 1)
 
-            # Draw trap/treasure only if visible
+            # Draw treasure or trap if revealed
             if reveal_all or tile in world.revealed:
                 if tile == world.treasure:
                     pygame.draw.circle(screen, COLORS['treasure'], rect.center, TILE_SIZE // 4)
                 elif tile in world.traps:
                     pygame.draw.circle(screen, COLORS['trap'], rect.center, TILE_SIZE // 4)
 
-    # draw agent
-    ax, ay = agent.pos
-    agent_rect = pygame.Rect(ax*TILE_SIZE, ay*TILE_SIZE, TILE_SIZE, TILE_SIZE)
-    pygame.draw.rect(screen, COLORS['agent'], agent_rect)
 
 def draw_status(screen, world, agent, grid_size):
     status_x = grid_size * TILE_SIZE + 20  # right panel start
@@ -132,11 +139,16 @@ def main():
                         percepts = world.get_percepts_at(agent.pos)
                         agent.update_knowledge(percepts, world)
 
+                        if world.status == "running":
+                            agent.infer_knowledge(world)  # Keep inferring!
+
                         with open("log.txt", "a") as f:
                             f.write(f"Moved to {agent.pos}\n")
                     else:
-                        print(f"Blocked move: {target} not in safe")
-
+                        # If no path found, declare loss
+                        print("[GAME OVER] No safe move possible. Declaring loss.")
+                        world.status = "lost"
+                        
                 elif event.key == pygame.K_t:
                     reveal_all = not reveal_all
                     print(f"[DEBUG] reveal_all is now {reveal_all}")
